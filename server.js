@@ -1,7 +1,14 @@
 #!/usr/bin/env node
 
-const http = require('http');
+const http = require('https');
+const fs = require('fs');
+const path = require('path');
+
 const { parseArgs } = require('util');
+
+const SSL_KEY = process.env.SSL_KEY || path.resolve(__dirname, 'server.key');
+const SSL_CERT = process.env.SSL_CERT || path.resolve(__dirname, 'server.crt');
+
 
 // Help message
 const showHelp = () => {
@@ -101,10 +108,29 @@ async function startServer() {
       PORT = await getPort({ port: 8090 });
     }
 
-    const server = http.createServer((req, res) => {
-      if (req.url.startsWith('/callback')) {
+    let sslOptions;
+    try {
+      sslOptions = {
+        key: fs.readFileSync(SSL_KEY),
+        cert: fs.readFileSync(SSL_CERT),
+      };
+    } catch (err) {
+      console.error(`Failed to load SSL certificates: ${err.message}`);
+      console.error(`  key  path: ${SSL_KEY}`);
+      console.error(`  cert path: ${SSL_CERT}`);
+      console.error(
+        'Generate self-signed certs with:\n  openssl req -nodes -new -x509 -keyout server.key -out server.cert'
+      );
+      process.exit(1);
+    }
+
+    const server = http.createServer(sslOptions, (req, res) => {
+      if (req.url.startsWith('/auth/callback')) {
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(htmlContent);
+      } else if (req.url.startsWith("/test")) {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end("test response");
       } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not Found');
@@ -118,8 +144,8 @@ async function startServer() {
     });
 
     // Start listening
-    server.listen(PORT, '127.0.0.1', () => {
-      console.log(`OAuth2 callback server running at http://127.0.0.1:${PORT}/callback`);
+    server.listen(PORT, () => {
+      console.log(`OAuth2 callback server running at https://127.0.0.1:${PORT}/auth/callback`);
     });
   } catch (err) {
     console.error(`Error: ${err.message}`);

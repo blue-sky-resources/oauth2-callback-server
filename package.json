@@ -1,11 +1,11 @@
 {
-  "name": "@usebruno/oauth2-callback-server",
+  "name": "@blueskyresources/oauth2-callback-server",
   "version": "1.0.0",
   "description": "Simple OAuth2 callback server for Bruno",
   "main": "server.js",
   "bin": {
     "oauth2-callback-server": "./server.js",
-    "@usebruno/oauth2-callback-server": "./server.js"
+    "@blueskyresources/oauth2-callback-server": "./server.js"
   },
   "scripts": {
     "start": "node server.js"
